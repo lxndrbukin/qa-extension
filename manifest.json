@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Popup Toggles: Dark Theme & Dropdowns",
+  "version": "1.0.0",
+  "description": "Popup with toggles to apply a dark theme and open/close all dropdowns on a target site. Settings are saved in localStorage.",
+  "action": {
+    "default_title": "Site Tweaks",
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["activeTab", "scripting"],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://YOUR-SITE-HERE/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
