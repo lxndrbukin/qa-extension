@@ -1,95 +1,59 @@
-/**
- * Content-side logic. Update selectors to match your site.
- *
- * Reads preferences from chrome.storage.local so it can apply them automatically
- * when the page loads or changes — regardless of whether the popup is open.
- */
-
-// Keys (must match popup.js)
+// Persist settings in localStorage (per request) and mirror to chrome.storage.local
+// so the content script can auto-apply them even when the popup is closed.
 const DARK_KEY = 'darkThemeEnabled';
 const DROPS_KEY = 'dropdownsExpanded';
 
-// === BEGIN: Customize these to match your site ===
-// Dark theme is applied by adding this class to <html> (documentElement)
-const DARK_CLASS_ON_HTML = 'ext-dark-theme';
+const darkToggle = document.getElementById('darkThemeToggle');
+const dropsToggle = document.getElementById('dropdownsToggle');
 
-// Minimal demo styles. Replace with site-specific theme adjustments if needed.
-const DARK_STYLE_CSS = `
-  html.${'ext-dark-theme'} {
-    color-scheme: dark;
-    background: #0b0f14 !important;
-  }
-  html.${'ext-dark-theme'} body { background: transparent !important; color: #e7ecf3 !important; }
-  html.${'ext-dark-theme'} a { color: #7db3ff !important; }
-`;
-
-// Dropdowns you want to expand/collapse. Example targets:
-//  - All <details> elements
-//  - Or a custom container class (e.g., .accordion-item)
-const DROPDOWN_SELECTOR = 'details, .accordion-item';
-// If not <details>, we toggle this class to mark the open state
-const DROPDOWN_OPEN_CLASS = 'open';
-// === END: Customize ===
-
-// Inject dark CSS once
-let darkStyleEl;
-function ensureDarkStyle() {
-  if (!darkStyleEl) {
-    darkStyleEl = document.createElement('style');
-    darkStyleEl.id = 'ext-dark-theme-style';
-    darkStyleEl.textContent = DARK_STYLE_CSS;
-    document.documentElement.appendChild(darkStyleEl);
-  }
+async function withActiveTab(fn) {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) await fn(tab.id);
+  } catch (err) { console.error(err); }
 }
 
-function applyDarkTheme(enabled) {
-  ensureDarkStyle();
-  document.documentElement.classList.toggle(DARK_CLASS_ON_HTML, !!enabled);
+async function loadState() {
+  // Prefer chrome.storage (shared), fall back to popup localStorage if needed.
+  const res = await chrome.storage.local.get([DARK_KEY, DROPS_KEY]);
+  const dark = typeof res[DARK_KEY] === 'boolean' ? res[DARK_KEY] : (localStorage.getItem(DARK_KEY) === 'true');
+  const drops = typeof res[DROPS_KEY] === 'boolean' ? res[DROPS_KEY] : (localStorage.getItem(DROPS_KEY) === 'true');
+  return { dark: !!dark, drops: !!drops };
 }
 
-function toggleAllDropdowns(expand) {
-  const nodes = document.querySelectorAll(DROPDOWN_SELECTOR);
-  nodes.forEach((el) => {
-    const tag = el.tagName.toLowerCase();
-    if (tag === 'details') {
-      el.open = !!expand;
-    } else {
-      el.classList.toggle(DROPDOWN_OPEN_CLASS, !!expand);
-      // If your site uses a clickable header to expand, you can also simulate a click here when state mismatches.
-      // Example (uncomment and tailor):
-      // const header = el.querySelector('.accordion-header');
-      // const isOpen = el.classList.contains(DROPDOWN_OPEN_CLASS);
-      // if (header && isOpen !== !!expand) header.click();
-    }
+async function persist(key, value) {
+  localStorage.setItem(key, String(value)); // as requested
+  await chrome.storage.local.set({ [key]: !!value }); // mirror for content script
+}
+
+function persistSend(key, value, type) {
+  persist(key, value).then(() => {
+    withActiveTab(async (tabId) => {
+      await chrome.tabs.sendMessage(tabId, { type, value: !!value });
+    });
   });
 }
 
-// Apply saved state on initial load
-(async function initFromStorage() {
-  try {
-    const res = await chrome.storage.local.get([DARK_KEY, DROPS_KEY]);
-    applyDarkTheme(!!res[DARK_KEY]);
-    toggleAllDropdowns(!!res[DROPS_KEY]);
-  } catch (e) {
-    console.warn('Could not read stored prefs', e);
-  }
-})();
-
-// React to changes coming from the popup (or any other script) via storage
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== 'local') return;
-  if (DARK_KEY in changes) applyDarkTheme(!!changes[DARK_KEY].newValue);
-  if (DROPS_KEY in changes) toggleAllDropdowns(!!changes[DROPS_KEY].newValue);
+// Initialize UI from stored state
+loadState().then(({ dark, drops }) => {
+  darkToggle.checked = dark;
+  dropsToggle.checked = drops;
 });
 
-// Also keep message-based control for direct toggles
-chrome.runtime.onMessage.addListener((msg) => {
-  if (!msg || typeof msg !== 'object') return;
-  if (msg.type === 'APPLY_DARK_THEME') {
-    applyDarkTheme(!!msg.value);
-  } else if (msg.type === 'TOGGLE_DROPDOWNS') {
-    toggleAllDropdowns(!!msg.value);
-  }
+// Wire events
+
+darkToggle.addEventListener('change', () => {
+  persistSend(DARK_KEY, darkToggle.checked, 'APPLY_DARK_THEME');
 });
 
-// Optional: SPA support hooks are available if needed.
+dropsToggle.addEventListener('change', () => {
+  persistSend(DROPS_KEY, dropsToggle.checked, 'TOGGLE_DROPDOWNS');
+});
+
+// When popup opens, push current states to page (ensures page reflects saved prefs
+// even if user never opened popup in this tab)
+withActiveTab(async (tabId) => {
+  const { dark, drops } = await loadState();
+  await chrome.tabs.sendMessage(tabId, { type: 'APPLY_DARK_THEME', value: dark });
+  await chrome.tabs.sendMessage(tabId, { type: 'TOGGLE_DROPDOWNS', value: drops });
+});
