@@ -1,0 +1,28 @@
+:root { --bg: #0b0f14; --card: #121822; --muted: #789; --text: #e7ecf3; --accent: #4c9aff; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  width: 320px; min-height: 220px; padding: 14px; font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: linear-gradient(180deg, var(--bg), #0e131a 60%);
+  color: var(--text);
+}
+.header { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; margin-bottom: 12px; }
+.logo { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: var(--card); box-shadow: 0 6px 20px rgba(0,0,0,.3) inset, 0 2px 6px rgba(0,0,0,.25); }
+h1 { margin: 0; font-size: 16px; }
+.sub { margin: 2px 0 0 0; color: var(--muted); font-size: 12px; }
+
+.row { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; padding: 12px; background: var(--card); border: 1px solid rgba(255,255,255,.06); border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+.row + .row { margin-top: 10px; }
+.labels strong { display: block; font-size: 14px; }
+.labels span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* iOS-style switch */
+.switch { position: relative; display: inline-block; width: 52px; height: 30px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; background: #253140; transition: .2s; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; top: 4px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+input:checked + .slider { background: var(--accent); }
+input:checked + .slider:before { transform: translateX(22px); }
+
+.note { margin-top: 12px; color: var(--muted); font-size: 12px; opacity: .9; }
+.note code { background: rgba(255,255,255,.06); padding: 2px 6px; border-radius: 6px; }
