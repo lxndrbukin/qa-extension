@@ -1,6 +1,13 @@
 /**
  * Content-side logic. Update selectors to match your site.
+ *
+ * Reads preferences from chrome.storage.local so it can apply them automatically
+ * when the page loads or changes — regardless of whether the popup is open.
  */
+
+// Keys (must match popup.js)
+const DARK_KEY = 'darkThemeEnabled';
+const DROPS_KEY = 'dropdownsExpanded';
 
 // === BEGIN: Customize these to match your site ===
 // Dark theme is applied by adding this class to <html> (documentElement)
@@ -57,7 +64,25 @@ function toggleAllDropdowns(expand) {
   });
 }
 
-// Listen for popup messages
+// Apply saved state on initial load
+(async function initFromStorage() {
+  try {
+    const res = await chrome.storage.local.get([DARK_KEY, DROPS_KEY]);
+    applyDarkTheme(!!res[DARK_KEY]);
+    toggleAllDropdowns(!!res[DROPS_KEY]);
+  } catch (e) {
+    console.warn('Could not read stored prefs', e);
+  }
+})();
+
+// React to changes coming from the popup (or any other script) via storage
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+  if (DARK_KEY in changes) applyDarkTheme(!!changes[DARK_KEY].newValue);
+  if (DROPS_KEY in changes) toggleAllDropdowns(!!changes[DROPS_KEY].newValue);
+});
+
+// Also keep message-based control for direct toggles
 chrome.runtime.onMessage.addListener((msg) => {
   if (!msg || typeof msg !== 'object') return;
   if (msg.type === 'APPLY_DARK_THEME') {
@@ -67,8 +92,4 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 });
 
-// Optional: re-apply when navigating on single-page apps
-const observer = new MutationObserver((mutations) => {
-  // no-op; hook available if you want to auto-reapply based on saved prefs
-});
-observer.observe(document.documentElement, { childList: true, subtree: true });
+// Optional: SPA support hooks are available if needed.
