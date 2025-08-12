@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Site Tweaks</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="logo">🌙</div>
+    <div>
+      <h1>Site Tweaks</h1>
+      <p class="sub">Quick toggles for your site</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="row">
+      <label class="switch">
+        <input id="darkThemeToggle" type="checkbox" />
+        <span class="slider"></span>
+      </label>
+      <div class="labels">
+        <strong>Dark theme</strong>
+        <span>Apply a dark theme to the page</span>
+      </div>
+    </section>
+
+    <section class="row">
+      <label class="switch">
+        <input id="dropdownsToggle" type="checkbox" />
+        <span class="slider"></span>
+      </label>
+      <div class="labels">
+        <strong>Open all dropdowns</strong>
+        <span>Toggle all dropdowns on the page</span>
+      </div>
+    </section>
+
+    <section class="note">
+      <p>
+        You can customize selectors in <code>content.js</code> to match your site (dropdown elements & open state class).
+      </p>
+    </section>
+  </main>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
