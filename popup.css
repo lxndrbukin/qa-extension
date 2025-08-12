@@ -24,5 +24,9 @@ h1 { margin: 0; font-size: 16px; }
 input:checked + .slider { background: var(--accent); }
 input:checked + .slider:before { transform: translateX(22px); }
 
+.btn { appearance: none; border: 1px solid rgba(255,255,255,.12); background: transparent; color: var(--text); padding: 8px 12px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+.btn:hover { background: rgba(255,255,255,.06); }
+.btn:active { transform: translateY(1px); }
+
 .note { margin-top: 12px; color: var(--muted); font-size: 12px; opacity: .9; }
 .note code { background: rgba(255,255,255,.06); padding: 2px 6px; border-radius: 6px; }
